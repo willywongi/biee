@@ -1,0 +1,26 @@
+{
+  "name": "biee",
+  "version": "1.0.0",
+  "description": "Event System inspired by browser UI events",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/willywongi/biee"
+  },
+  "keywords": [
+    "event",
+    "event-emitter",
+    "publish",
+    "on",
+    "once"
+  ],
+  "author": "pongi@pongi.it",
+  "license": "apache",
+  "bugs": {
+    "url": "https://github.com/willywongi/biee/issues"
+  },
+  "homepage": "https://github.com/willywongi/biee"
+}
