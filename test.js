@@ -1,8 +1,8 @@
-biee = require('./index');
-EventTarget = biee.EventTarget;
-GlobalTarget = biee.GlobalTarget;
-t = new EventTarget()
-t2 = new EventTarget()
+var biee = require('./index');
+var EventTarget = biee.EventTarget;
+var GlobalTarget = biee.GlobalTarget;
+var t = new EventTarget()
+var t2 = new EventTarget()
 
 t.publish('wavehands', {
 	broadcast: true
@@ -28,9 +28,9 @@ t.publish('welcome', {
 });
 t.on('welcome', function(e, who) {
 	// prevent this event to bubble
-	e.halted = true;
+	e.stopPropagation();
 	if (who == 'badguy') {
-		e.prevented = true;
+		e.preventDefault();
 	}
 });
 t2.on('welcome', function(e, who) {
@@ -56,3 +56,13 @@ setTimeout(function() { t2.fire('timeout'); }, 1000);
 var fn = function() { throw "I detached this listener" }
 t.on('timeout', fn);
 t.off('timeout', fn);
+
+t.publish('run', {
+	defaultFn: function() {
+		console.log("t: runs and it's unstoppable");
+	},
+	preventable: false
+});
+
+t.on('run', function(e) { e.preventDefault(); });
+t.fire('run');
