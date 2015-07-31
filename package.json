@@ -4,7 +4,7 @@
   "description": "Event System inspired by browser UI events",
   "main": "index.js",
   "scripts": {
-    "test": "node tests.js"
+    "test": "./node_modules/.bin/mocha test.js"
   },
   "repository": {
     "type": "git",
@@ -22,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/willywongi/biee/issues"
   },
-  "homepage": "https://github.com/willywongi/biee"
+  "homepage": "https://github.com/willywongi/biee",
+  "devDependencies": {
+    "mocha": "^2.2.5"
+  }
 }
