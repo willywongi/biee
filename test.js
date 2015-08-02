@@ -1,3 +1,4 @@
+// global=describe,it
 var biee = require('./index');
 var EventTarget = biee.EventTarget;
 var GlobalTarget = biee.GlobalTarget;
@@ -41,13 +42,14 @@ describe('Default behaviour', function() {
 	it('should NOT run the event\'s default function (blocked by a subscriber)', function(done) {
 		t.publish('my-event', {
 			defaultFn: function(e) {
-				done('This shoud not be called');
+				done(Error('This shoud not be called'));
 			}
 		});
 		t.on('my-event', function(e) {
 			e.preventDefault();
 		})
 		t.fire('my-event');
+		done();
 	})
 	it('should run the event\'s unpreventable default function', function(done) {
 		t.publish('my-event', {
@@ -73,13 +75,10 @@ describe('Callbacks and default behaviour', function() {
 		t.publish('my-event', {
 			defaultFn: function(e) {
 				a.push(3);
-				if (a == [1, 2, 3]) {
+				if (a.join('') == '123') {
 					done();
 				} else {
-					done({
-						'message': 'Callbacks not ordered',
-						'callbacks': a
-					})
+					done(Error('Callbacks not ordered: ' + a.join(',')));
 				}
 				
 			}
@@ -95,65 +94,87 @@ describe('Callbacks and default behaviour', function() {
 	
 })
 
-t.publish('wavehands', {
-	broadcast: true
+describe('Broadcasting to GlobalTarget', function() {
+	var t;
+	beforeEach(function() {
+		t = new EventTarget();
+	});
+	it('should bubble "broadcast" event to the GlobalTarget', function(done) {
+		t.publish('wavehands', {
+			broadcast: true
+		});
+		GlobalTarget.on('wavehands', function(e, who) {
+			done();
+		});
+		t.fire('wavehands', 'long lost pal');
+	});
+	it('should not bubble normal event to the GlobalTarget', function(done) {
+		GlobalTarget.on('shoutout', function(e) {
+			done(Error("Event shoutout must not bubble to GlobalTarget"))
+		})
+		t.fire('shoutout');
+		done();
+	});
 });
 
-GlobalTarget.on('wavehands', function(e, who) {
-	console.log('Global: someone waved hands to %s', who);
-});
+describe('Bubbling to other targets', function() {
+	it('should bubble to added target', function(done) {
+		var t = new EventTarget(),
+			t2 = new EventTarget();
+		t.addTarget(t2);
+		t2.on('blow', function(e) {
+			done();
+		});
+		t.fire('blow');
+	});
 
-t.publish('greet', {
-	defaultFn: function() { console.log('t: Hello!'); },
-});
-t.on('greet', function(e) { console.log('t: To the world:'); })
-t.fire('greet');
+	it('should NOT bubble to added target a stopped event', function(done) {
+		var t = new EventTarget(),
+			t2 = new EventTarget();
+		t.addTarget(t2);
+		t2.on('blow', function(e) {
+			done(Error("Should not bubble here (stopped event)"));
+		});
+		t.on('blow', function(e) {
+			e.stopPropagation();
+		});
+		t.fire('blow');
+		done();
+	});
+})
 
-t.fire('wavehands', 'long lost pal');
-
-t.addTarget(t2);
-t.publish('welcome', {
-	defaultFn: function(e, who) {
-		console.log('t: Welcome here, %s!', who);
-	}
-});
-t.on('welcome', function(e, who) {
-	// prevent this event to bubble
-	e.stopPropagation();
-	if (who == 'badguy') {
-		e.preventDefault();
-	}
-});
-t2.on('welcome', function(e, who) {
-	throw "t2: Event " + e.name + " should not bubble here";
-});
-t.fire('welcome', 'buddy');
-t.fire('welcome', 'badguy');
-
-t2.on('blow', function(e) { console.log('t2 is reacting to a bubbling event (%s)', e.name); });
-t.fire('blow');
-
-t.once('jump', function(e) { console.log('t: jump! (you should see this log just once)')});
-t.fire('jump');
-t.fire('jump');
-
-var handler = t2.on('timeout', function() {
-	throw "t2: timeout should not be listened to";
-});
-
-setTimeout(function() { handler.detach(); }, 500);
-setTimeout(function() { t2.fire('timeout'); }, 1000);
-
-var fn = function() { throw "I detached this listener" }
-t.on('timeout', fn);
-t.off('timeout', fn);
-
-t.publish('run', {
-	defaultFn: function() {
-		console.log("t: runs and it's unstoppable");
-	},
-	preventable: false
-});
-
-t.on('run', function(e) { e.preventDefault(); });
-t.fire('run');
+describe('Attaching and detaching listeners', function() {
+	it('should listen just once to an event', function(done) {
+		var t = new EventTarget(),
+			fires = 0;
+		t.once('jump', function(e) { 
+			fires += 1;
+		});
+		t.fire('jump');
+		t.fire('jump');
+		if (fires == 1) {
+			done();
+		} else {
+			done(Error('Subscriber listened more than "once" (' + fires + ')'));
+		}
+	});
+	it('should not listen to the event (listener detached with detach)', function(done) {
+		var t = new EventTarget(),
+			handler = t.on('my-event', function() {
+				done(Error("This event should not be listened to"));
+			});
+		handler.detach();
+		t.fire('my-event');
+		done();
+	});	
+	it('should not listen to the event (listener detached with off)', function(done) {
+		var t = new EventTarget(),
+			fn = function() {
+				done(Error("This event should not be listened to"));
+			};
+		t.on('my-event', fn);
+		t.off('my-event', fn);
+		t.fire('my-event');
+		done();
+	});	
+})
