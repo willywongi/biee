@@ -40,7 +40,7 @@ Facade.prototype.stopImmediatePropagation = function() {
 }
 
 
-function ET() {}
+function ET() {};
 
 var GT = new ET();
 
