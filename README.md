@@ -50,6 +50,7 @@ t.addTarget(t2);
 t2.on('greet', function(e, who) {
 	console.log('Cheers from t2 too!');
 });
+t.fire('greet', 'Bob');
 ```
 
  
